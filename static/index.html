@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Accounting Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script>
+        // Load theme immediately to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            const html = document.documentElement;
+            html.setAttribute('data-theme', savedTheme);
+            
+            // Update icon and text immediately
+            document.addEventListener('DOMContentLoaded', () => {
+                const themeIcon = document.getElementById('themeIcon');
+                const themeText = document.getElementById('themeText');
+                if (themeIcon && themeText) {
+                    if (savedTheme === 'dark') {
+                        themeIcon.className = 'fas fa-moon';
+                        themeText.textContent = 'Light Mode';
+                    } else {
+                        themeIcon.className = 'fas fa-sun';
+                        themeText.textContent = 'Dark Mode';
+                    }
+                }
+            }, { once: true });
+        })();
+    </script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-chart-line"></i>
+                <span>AI Accounting Dashboard</span>
+            </div>
+            <button class="nav-toggle" id="navToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-menu-wrapper">
+                <!-- Landing Page Navigation -->
+                <ul class="nav-menu nav-menu-landing" id="navMenuLanding">
+                    <li><a href="#workspace" class="nav-link">Workspace</a></li>
+                    <li><a href="#about" class="nav-link">About Us</a></li>
+                    <li>
+                        <a href="#data-entry" class="btn btn-primary nav-cta">
+                            <span>Start Now</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Workspace Navigation -->
+                <ul class="nav-menu nav-menu-workspace hidden" id="navMenuWorkspace">
+                    <li><a href="#home" class="nav-link">Home</a></li>
+                    <li><a href="#data-entry" class="nav-link">Data Entry</a></li>
+                    <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
+                    <li><a href="#trial-balance" class="nav-link">Trial Balance</a></li>
+                    <li><a href="#balance-sheet" class="nav-link">Balance Sheet</a></li>
+                    <li><a href="#income-statement" class="nav-link">Income Statement</a></li>
+                    <li><a href="#ratios" class="nav-link">Ratios</a></li>
+                    <li><a href="#insights" class="nav-link">AI Insights</a></li>
+                    <li><a href="#chat" class="nav-link">Chat</a></li>
+                </ul>
+                
+                <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                    <span id="themeText">Light Mode</span>
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+        
+        <!-- Toast Container (will be created dynamically) -->
+
+        <!-- Landing Page Section -->
+        <section id="home" class="section landing-page">
+            <div class="landing-hero">
+                <div class="hero-content">
+                    <div class="hero-badge">
+                        <i class="fas fa-sparkles"></i>
+                        <span>AI-Powered Accounting</span>
+                    </div>
+                    <h1 class="hero-title">
+                        <span class="title-line-1">Transform Your</span>
+                        <span class="title-line-2">Financial Management</span>
+                    </h1>
+                    <p class="hero-description">
+                        Experience the future of accounting with intelligent automation, real-time insights, and comprehensive financial analysis powered by artificial intelligence.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#data-entry" class="btn btn-primary hero-btn">
+                            <span>Get Started</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <a href="#dashboard" class="btn btn-secondary hero-btn">
+                            <span>View Dashboard</span>
+                            <i class="fas fa-chart-bar"></i>
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="100">0</div>
+                            <div class="stat-label">% Accuracy</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="24">0</div>
+                            <div class="stat-label">/7 Support</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" data-target="1000">0</div>
+                            <div class="stat-label">+ Transactions</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="floating-card card-1">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </div>
+                    <div class="floating-card card-2">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>Balance Sheet</span>
+                    </div>
+                    <div class="floating-card card-3">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Invoicing</span>
+                    </div>
+                    <div class="floating-card card-4">
+                        <i class="fas fa-robot"></i>
+                        <span>AI Insights</span>
+                    </div>
+                    <div class="hero-gradient"></div>
+                </div>
+            </div>
+
+            <!-- Workspace Section -->
+            <div class="workspace-section" id="workspace">
+                <div class="workspace-header">
+                    <h2>Your Workspace</h2>
+                    <p>Manage all your accounting needs in one place</p>
+                </div>
+                <div class="workspace-preview">
+                    <div class="workspace-card">
+                        <i class="fas fa-edit"></i>
+                        <h3>Data Entry</h3>
+                        <p>Enter transactions with multiple accounts support</p>
+                        <a href="#data-entry" class="btn btn-secondary">Go to Data Entry</a>
+                    </div>
+                    <div class="workspace-card">
+                        <i class="fas fa-chart-pie"></i>
+                        <h3>Dashboard</h3>
+                        <p>View real-time financial insights and analytics</p>
+                        <a href="#dashboard" class="btn btn-secondary">Go to Dashboard</a>
+                    </div>
+                    <div class="workspace-card">
+                        <i class="fas fa-file-invoice"></i>
+                        <h3>Financial Reports</h3>
+                        <p>Generate balance sheets, income statements, and more</p>
+                        <a href="#balance-sheet" class="btn btn-secondary">View Reports</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Us Section -->
+            <div class="about-section" id="about">
+                <div class="about-content">
+                    <div class="about-text">
+                        <h2>About Us</h2>
+                        <p>We are dedicated to revolutionizing the way businesses manage their finances through cutting-edge AI technology and intuitive design.</p>
+                        <p>Our mission is to make accounting accessible, efficient, and intelligent for businesses of all sizes.</p>
+                        <div class="about-features">
+                            <div class="about-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>AI-Powered Insights</span>
+                            </div>
+                            <div class="about-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Real-Time Analytics</span>
+                            </div>
+                            <div class="about-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Comprehensive Reporting</span>
+                            </div>
+                            <div class="about-feature">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Secure & Reliable</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="about-visual">
+                        <div class="about-card">
+                            <i class="fas fa-brain"></i>
+                            <h3>AI Technology</h3>
+                            <p>Powered by advanced artificial intelligence</p>
+                        </div>
+                        <div class="about-card">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Secure Platform</h3>
+                            <p>Your data is safe and protected</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="cta-section">
+                <div class="cta-content">
+                    <h2>Ready to Transform Your Accounting?</h2>
+                    <p>Start managing your finances more efficiently today</p>
+                    <a href="#data-entry" class="btn btn-primary cta-btn">
+                        <span>Start Now</span>
+                        <i class="fas fa-rocket"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Entry Section -->
+        <section id="data-entry" class="section hidden">
+            <div class="section-header">
+                <h1><i class="fas fa-edit"></i> Transaction Management</h1>
+                <div class="section-actions">
+                    <button class="btn btn-secondary" onclick="loadSampleData()">
+                        <i class="fas fa-download"></i> Load Sample Data
+                    </button>
+                    <button class="btn btn-danger" onclick="clearAllData()">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <!-- Manual Entry -->
+                <div class="card">
+                    <h2><i class="fas fa-keyboard"></i> Manual Entry</h2>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label><i class="fas fa-money-bill-wave"></i> Currency</label>
+                        <select id="currencySelector" class="select-input" onchange="changeCurrency()">
+                            <option value="USD">USD - US Dollar ($)</option>
+                            <option value="EUR">EUR - Euro (€)</option>
+                            <option value="GBP">GBP - British Pound (£)</option>
+                            <option value="JPY">JPY - Japanese Yen (¥)</option>
+                            <option value="CNY">CNY - Chinese Yuan (¥)</option>
+                            <option value="INR">INR - Indian Rupee (₹)</option>
+                            <option value="AUD">AUD - Australian Dollar (A$)</option>
+                            <option value="CAD">CAD - Canadian Dollar (C$)</option>
+                            <option value="CHF">CHF - Swiss Franc (Fr)</option>
+                            <option value="SGD">SGD - Singapore Dollar (S$)</option>
+                            <option value="AED">AED - UAE Dirham (د.إ)</option>
+                            <option value="SAR">SAR - Saudi Riyal (ر.س)</option>
+                            <option value="KWD">KWD - Kuwaiti Dinar (د.ك)</option>
+                            <option value="QAR">QAR - Qatari Riyal (ر.ق)</option>
+                            <option value="ZAR">ZAR - South African Rand (R)</option>
+                            <option value="BRL">BRL - Brazilian Real (R$)</option>
+                            <option value="MXN">MXN - Mexican Peso ($)</option>
+                        </select>
+                    </div>
+                    <div id="transactionFormsContainer">
+                        <form class="transaction-form" onsubmit="addTransaction(event, this)">
+                            <div class="transaction-form-header">
+                                <h3><i class="fas fa-file-invoice"></i> Transaction Entry #1</h3>
+                                <button type="button" class="btn-icon btn-remove-form" onclick="removeTransactionForm(this)" title="Remove Transaction" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" class="transaction-date" required>
+                            </div>
+                            
+                                <!-- Debit Accounts Section -->
+                            <div class="accounts-section">
+                                <div class="accounts-header">
+                                    <label><i class="fas fa-arrow-down"></i> Debit Accounts</label>
+                                    <button type="button" class="btn-icon btn-add" onclick="addDebitRow(this)" title="Add Debit Account">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="debit-accounts">
+                                <div class="account-row">
+                                    <div class="account-input-group">
+                                        <input type="text" class="account-name-input" placeholder="Account Name (e.g., Cash, Inventory)" required>
+                                        <input type="number" class="account-amount-input" min="0" step="0.01" placeholder="Amount" required>
+                                        <div class="account-actions">
+                                            <button type="button" class="btn-icon btn-add-row" onclick="addDebitRowBefore(this)" title="Add Before">
+                                                <i class="fas fa-plus-circle"></i>
+                                            </button>
+                                            <button type="button" class="btn-icon btn-add-row" onclick="addDebitRowAfter(this)" title="Add After">
+                                                <i class="fas fa-plus-circle"></i>
+                                            </button>
+                                            <button type="button" class="btn-icon btn-remove-row" onclick="removeAccountRow(this)" title="Remove">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                            <!-- Credit Accounts Section -->
+                            <div class="accounts-section">
+                                <div class="accounts-header">
+                                    <label><i class="fas fa-arrow-up"></i> Credit Accounts</label>
+                                    <button type="button" class="btn-icon btn-add" onclick="addCreditRow(this)" title="Add Credit Account">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div class="credit-accounts">
+                                <div class="account-row">
+                                    <div class="account-input-group">
+                                        <input type="text" class="account-name-input" placeholder="Account Name (e.g., Sales Revenue, Accounts Payable)" required>
+                                        <input type="number" class="account-amount-input" min="0" step="0.01" placeholder="Amount" required>
+                                        <div class="account-actions">
+                                            <button type="button" class="btn-icon btn-add-row" onclick="addCreditRowBefore(this)" title="Add Before">
+                                                <i class="fas fa-plus-circle"></i>
+                                            </button>
+                                            <button type="button" class="btn-icon btn-add-row" onclick="addCreditRowAfter(this)" title="Add After">
+                                                <i class="fas fa-plus-circle"></i>
+                                            </button>
+                                            <button type="button" class="btn-icon btn-remove-row" onclick="removeAccountRow(this)" title="Remove">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea class="transaction-description" rows="3" placeholder="Transaction details"></textarea>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Add Transaction
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="addAnotherTransaction()">
+                                    <i class="fas fa-plus-circle"></i> Add Another Transaction
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="bulk-actions">
+                        <button type="button" class="btn btn-success" onclick="addAllTransactions()">
+                            <i class="fas fa-layer-group"></i> Add All Transactions at Once
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Upload -->
+                <div class="card">
+                    <h2><i class="fas fa-upload"></i> Document Upload</h2>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag and drop files here or click to browse</p>
+                        <p class="upload-hint">Supported: PDF, Excel, CSV, TXT</p>
+                        <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv,.txt" style="display: none;" onchange="handleFileUpload(event)">
+                    </div>
+                    <div id="filePreview" class="file-preview hidden"></div>
+                </div>
+            </div>
+
+            <!-- Transactions List -->
+            <div class="card" id="transactionsCard">
+                <h2><i class="fas fa-list"></i> Current Transactions</h2>
+                <div id="transactionsTable"></div>
+                <div class="table-actions">
+                    <div class="form-row">
+                        <input type="number" id="deleteId" placeholder="Enter Transaction ID" min="1">
+                        <button class="btn btn-danger" onclick="deleteTransaction()">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="exportTransactions()">
+                        <i class="fas fa-download"></i> Download CSV
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section hidden">
+            <div class="section-header">
+                <h1><i class="fas fa-chart-bar"></i> Financial Dashboard</h1>
+            </div>
+            
+            <div id="dashboardMetrics" class="metrics-grid"></div>
+            
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Account Balances</h3>
+                    <div id="accountBalancesChart"></div>
+                </div>
+                <div class="card">
+                    <h3>Debits vs Credits</h3>
+                    <div id="debitsCreditsChart"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Transaction Timeline</h3>
+                <div id="timelineChart"></div>
+            </div>
+        </section>
+
+        <!-- Trial Balance Section -->
+        <section id="trial-balance" class="section hidden">
+            <div class="section-header">
+                <h1><i class="fas fa-balance-scale"></i> Trial Balance</h1>
+            </div>
+            
+            <div id="trialBalanceContent"></div>
+        </section>
+
+        <!-- Balance Sheet Section -->
+        <section id="balance-sheet" class="section hidden">
+            <div class="section-header">
+                <h1><i class="fas fa-file-invoice-dollar"></i> Balance Sheet</h1>
+            </div>
+            
+            <div id="balanceSheetContent"></div>
+        </section>
+
+        <!-- Income Statement Section -->
+        <section id="income-statement" class="section hidden">
+            <div class="section-header">
+                <h1><i class="fas fa-chart-line"></i> Income Statement</h1>
+            </div>
+            
+            <div id="incomeStatementContent"></div>
+        </section>
+
+        <!-- Financial Ratios Section -->
+        <section id="ratios" class="section hidden">
+            <div class="section-header">
+                <h1><i class="fas fa-percentage"></i> Financial Ratios</h1>
+                <select id="ratioCategory" class="select-input" onchange="loadRatios()">
+                    <option value="Liquidity Ratios">Liquidity Ratios</option>
+                    <option value="Profitability Ratios">Profitability Ratios</option>
+                    <option value="Efficiency Ratios">Efficiency Ratios</option>
+                    <option value="Solvency Ratios">Solvency Ratios</option>
+                </select>
+            </div>
+            
+            <div id="ratiosContent"></div>
+        </section>
+
+        <!-- AI Insights Section -->
+        <section id="insights" class="section hidden">
+            <div class="section-header">
+                <h1><i class="fas fa-brain"></i> AI-Generated Insights</h1>
+                <button class="btn btn-primary" onclick="generateInsights()">
+                    <i class="fas fa-sparkles"></i> Generate Insights
+                </button>
+            </div>
+            
+            <div id="insightsContent"></div>
+        </section>
+
+        <!-- Chat Section -->
+        <section id="chat" class="section hidden">
+            <div class="section-header">
+                <h1><i class="fas fa-comments"></i> Financial Assistant Chat</h1>
+                <button class="btn btn-secondary" onclick="clearChatHistory()">
+                    <i class="fas fa-eraser"></i> Clear History
+                </button>
+            </div>
+            
+            <div class="chat-container">
+                <div id="chatMessages" class="chat-messages"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" placeholder="Ask about your financial data..." class="chat-input">
+                    <button class="btn btn-primary" onclick="sendChatMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
+
