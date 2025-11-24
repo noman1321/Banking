@@ -1055,7 +1055,11 @@ async function loadChatHistory() {
         history.forEach(msg => {
             const messageDiv = document.createElement('div');
             messageDiv.className = `chat-message ${msg.role}`;
-            messageDiv.textContent = msg.content;
+            if (msg.role === 'assistant') {
+                messageDiv.innerHTML = formatChatResponse(msg.content);
+            } else {
+                messageDiv.textContent = msg.content;
+            }
             chatMessages.appendChild(messageDiv);
         });
         
@@ -1090,8 +1094,28 @@ async function sendChatMessage() {
         if (data.success) {
             const assistantMsg = document.createElement('div');
             assistantMsg.className = 'chat-message assistant';
-            assistantMsg.textContent = data.response;
+            
+            // Format the response text (convert bullet points and line breaks)
+            const formattedResponse = formatChatResponse(data.response);
+            assistantMsg.innerHTML = formattedResponse;
+            
             chatMessages.appendChild(assistantMsg);
+            
+            // Display graphs if available
+            if (data.graphs && data.graphs.length > 0) {
+                data.graphs.forEach((graph, index) => {
+                    const graphContainer = document.createElement('div');
+                    graphContainer.className = 'chat-graph-container';
+                    graphContainer.id = `chatGraph${Date.now()}_${index}`;
+                    chatMessages.appendChild(graphContainer);
+                    
+                    // Render graph after a small delay to ensure container is in DOM
+                    setTimeout(() => {
+                        renderChatGraph(graph, graphContainer.id);
+                    }, 100);
+                });
+            }
+            
             chatMessages.scrollTop = chatMessages.scrollHeight;
         } else {
             showAlert(data.message, 'error');
@@ -1100,6 +1124,156 @@ async function sendChatMessage() {
         showAlert(error.message, 'error');
     } finally {
         hideLoading();
+    }
+}
+
+function formatChatResponse(text) {
+    // Convert bullet points and format text
+    let formatted = text
+        .replace(/\n/g, '<br>')
+        .replace(/•/g, '•')
+        .replace(/^\s*[-*]\s+/gm, '• '); // Convert dashes/asterisks to bullets
+    
+    // Wrap sections in divs for better styling
+    formatted = formatted.replace(/(Recommendations?:)/gi, '<strong>$1</strong>');
+    formatted = formatted.replace(/(Suggestions?:)/gi, '<strong>$1</strong>');
+    
+    return formatted;
+}
+
+function renderChatGraph(graph, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    try {
+        let trace, layout, data;
+        
+        switch (graph.type) {
+            case 'bar':
+                trace = {
+                    x: graph.data.x,
+                    y: graph.data.y,
+                    type: 'bar',
+                    marker: {
+                        color: graph.data.colors || '#3b82f6'
+                    }
+                };
+                data = [trace];
+                layout = {
+                    title: graph.title,
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: 'var(--text-primary)' },
+                    xaxis: { gridcolor: 'var(--border)' },
+                    yaxis: { gridcolor: 'var(--border)' },
+                    margin: { t: 50, b: 40, l: 60, r: 40 },
+                    height: 300
+                };
+                break;
+                
+            case 'bar_grouped':
+                data = [];
+                if (graph.data.y1) {
+                    data.push({
+                        x: graph.data.x,
+                        y: graph.data.y1,
+                        name: graph.data.label1 || 'Series 1',
+                        type: 'bar',
+                        marker: { color: '#3b82f6' }
+                    });
+                }
+                if (graph.data.y2) {
+                    data.push({
+                        x: graph.data.x,
+                        y: graph.data.y2,
+                        name: graph.data.label2 || 'Series 2',
+                        type: 'bar',
+                        marker: { color: '#10b981' }
+                    });
+                }
+                if (graph.data.y3) {
+                    data.push({
+                        x: graph.data.x,
+                        y: graph.data.y3,
+                        name: graph.data.label3 || 'Series 3',
+                        type: 'bar',
+                        marker: { color: '#f59e0b' }
+                    });
+                }
+                layout = {
+                    title: graph.title,
+                    barmode: 'group',
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: 'var(--text-primary)' },
+                    xaxis: { gridcolor: 'var(--border)' },
+                    yaxis: { gridcolor: 'var(--border)' },
+                    margin: { t: 50, b: 40, l: 60, r: 40 },
+                    height: 300
+                };
+                break;
+                
+            case 'line':
+                data = [];
+                if (graph.data.y1) {
+                    data.push({
+                        x: graph.data.x,
+                        y: graph.data.y1,
+                        name: graph.data.label1 || 'Series 1',
+                        mode: 'lines+markers',
+                        line: { color: '#3b82f6', width: 3 },
+                        marker: { size: 8 }
+                    });
+                }
+                if (graph.data.y2) {
+                    data.push({
+                        x: graph.data.x,
+                        y: graph.data.y2,
+                        name: graph.data.label2 || 'Series 2',
+                        mode: 'lines+markers',
+                        line: { color: '#10b981', width: 3 },
+                        marker: { size: 8 }
+                    });
+                }
+                layout = {
+                    title: graph.title,
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: 'var(--text-primary)' },
+                    xaxis: { gridcolor: 'var(--border)' },
+                    yaxis: { gridcolor: 'var(--border)' },
+                    margin: { t: 50, b: 40, l: 60, r: 40 },
+                    height: 300
+                };
+                break;
+                
+            case 'pie':
+                trace = {
+                    labels: graph.data.labels,
+                    values: graph.data.values,
+                    type: 'pie',
+                    marker: {
+                        colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+                    }
+                };
+                data = [trace];
+                layout = {
+                    title: graph.title,
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: 'var(--text-primary)' },
+                    margin: { t: 50, b: 40, l: 40, r: 40 },
+                    height: 300
+                };
+                break;
+                
+            default:
+                return;
+        }
+        
+        Plotly.newPlot(containerId, data, layout, { responsive: true });
+    } catch (error) {
+        console.error('Error rendering graph:', error);
     }
 }
 

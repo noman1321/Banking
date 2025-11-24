@@ -780,6 +780,28 @@ table tbody tr:hover {
     color: var(--text-primary);
 }
 
+.chat-message.assistant strong {
+    color: var(--primary);
+    font-weight: 600;
+    display: block;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.chat-message.assistant br {
+    line-height: 1.6;
+}
+
+.chat-graph-container {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    width: 100%;
+    min-height: 300px;
+}
+
 .chat-input-container {
     display: flex;
     gap: 0.5rem;

@@ -340,7 +340,7 @@ def get_ai_insights(trial_balance, balance_sheet):
         return f"Error generating insights: {str(e)}"
 
 def chat_with_ai(user_query, context):
-    """Natural language chat about financial data"""
+    """Natural language chat about financial data with structured responses"""
     try:
         prompt = f"""
 You are an expert financial analyst assistant with access to complete financial data. You have all the transaction details, trial balance, balance sheet, income statement, and financial ratios.
@@ -354,18 +354,39 @@ IMPORTANT INSTRUCTIONS:
 6. Be accurate and cite specific numbers from the data
 7. Never say you don't have the information - you have complete access to all financial data
 
+RESPONSE FORMAT REQUIREMENTS:
+- Structure your answer using bullet points (•) for key findings and information
+- Use clear sections with headers if needed
+- Always include a "Recommendations" section with actionable suggestions when relevant
+- Always include a "Suggestions" section with additional insights or next steps when relevant
+- Format numbers with proper currency symbols and commas (e.g., $1,234.56)
+- Use clear, concise language
+
+EXAMPLE FORMAT:
+• Key Finding 1: [specific data with numbers]
+• Key Finding 2: [specific data with numbers]
+• Key Finding 3: [specific data with numbers]
+
+Recommendations:
+• Recommendation 1: [actionable advice]
+• Recommendation 2: [actionable advice]
+
+Suggestions:
+• Suggestion 1: [additional insight or next step]
+• Suggestion 2: [additional insight or next step]
+
 FINANCIAL DATA:
 {context}
 
 USER QUESTION: {user_query}
 
-Please provide a detailed, accurate answer using the financial data above. Include specific numbers, amounts, account names, and metrics where relevant.
+Please provide a structured answer following the format above. Include specific numbers, amounts, account names, and metrics where relevant.
         """
         
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are an expert financial analyst assistant with complete access to all financial data including transactions, balance sheets, income statements, and financial ratios. Always provide specific, accurate answers based on the data provided."},
+                {"role": "system", "content": "You are an expert financial analyst assistant with complete access to all financial data including transactions, balance sheets, income statements, and financial ratios. Always provide structured answers with bullet points, recommendations, and suggestions based on the data provided."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3  # Lower temperature for more accurate, factual responses
@@ -374,6 +395,142 @@ Please provide a detailed, accurate answer using the financial data above. Inclu
         return response.choices[0].message.content
     except Exception as e:
         return f"Error: {str(e)}"
+
+def generate_relevant_graphs(user_query, transactions_df, trial_balance, balance_sheet, income_statement, ratios):
+    """Generate relevant graphs based on the user's question"""
+    graphs = []
+    
+    if transactions_df is None or transactions_df.empty:
+        return graphs
+    
+    query_lower = user_query.lower()
+    
+    # Account-related questions
+    if any(word in query_lower for word in ['account', 'accounts', 'balance', 'balances']):
+        if not trial_balance.empty:
+            account_data = trial_balance[['account', 'balance']].copy()
+            account_data = account_data.sort_values('balance', ascending=False).head(10)
+            
+            graphs.append({
+                'type': 'bar',
+                'title': 'Account Balances',
+                'data': {
+                    'x': account_data['account'].tolist(),
+                    'y': [float(b) for b in account_data['balance'].tolist()],
+                    'colors': ['#10b981' if float(b) >= 0 else '#ef4444' for b in account_data['balance'].tolist()]
+                }
+            })
+    
+    # Transaction-related questions
+    if any(word in query_lower for word in ['transaction', 'transactions', 'debit', 'credit', 'spending', 'income']):
+        account_summary = transactions_df.groupby('account').agg({
+            'debit': 'sum',
+            'credit': 'sum'
+        }).reset_index()
+        account_summary = account_summary.head(10)
+        
+        graphs.append({
+            'type': 'bar_grouped',
+            'title': 'Debits vs Credits by Account',
+            'data': {
+                'x': account_summary['account'].tolist(),
+                'y1': [float(d) for d in account_summary['debit'].tolist()],
+                'y2': [float(c) for c in account_summary['credit'].tolist()],
+                'label1': 'Debits',
+                'label2': 'Credits'
+            }
+        })
+    
+    # Time-based questions
+    if any(word in query_lower for word in ['time', 'date', 'timeline', 'trend', 'over time', 'monthly', 'daily']):
+        if 'date' in transactions_df.columns:
+            try:
+                transactions_df['date'] = pd.to_datetime(transactions_df['date'])
+                daily_summary = transactions_df.groupby(transactions_df['date'].dt.date).agg({
+                    'debit': 'sum',
+                    'credit': 'sum'
+                }).reset_index()
+                daily_summary = daily_summary.sort_values('date')
+                
+                graphs.append({
+                    'type': 'line',
+                    'title': 'Transaction Timeline',
+                    'data': {
+                        'x': [str(d) for d in daily_summary['date'].tolist()],
+                        'y1': [float(d) for d in daily_summary['debit'].tolist()],
+                        'y2': [float(c) for c in daily_summary['credit'].tolist()],
+                        'label1': 'Debits',
+                        'label2': 'Credits'
+                    }
+                })
+            except:
+                pass
+    
+    # Revenue/Expense questions
+    if any(word in query_lower for word in ['revenue', 'expense', 'expenses', 'income statement', 'profit', 'loss']):
+        if income_statement:
+            if not income_statement['Expenses'].empty:
+                expense_data = income_statement['Expenses'].head(10)
+                graphs.append({
+                    'type': 'pie',
+                    'title': 'Expense Distribution',
+                    'data': {
+                        'labels': expense_data['account'].tolist(),
+                        'values': [float(v) for v in expense_data['debit'].tolist()]
+                    }
+                })
+            
+            graphs.append({
+                'type': 'bar_grouped',
+                'title': 'Revenue vs Expenses',
+                'data': {
+                    'x': ['Total'],
+                    'y1': [float(income_statement['Total Revenue'])],
+                    'y2': [float(income_statement['Total Expenses'])],
+                    'y3': [float(income_statement['Net Income'])],
+                    'label1': 'Revenue',
+                    'label2': 'Expenses',
+                    'label3': 'Net Income'
+                }
+            })
+    
+    # Ratio questions
+    if any(word in query_lower for word in ['ratio', 'ratios', 'liquidity', 'profitability', 'efficiency', 'solvency']):
+        if ratios:
+            for category, ratio_data in ratios.items():
+                if ratio_data:
+                    ratio_names = list(ratio_data.keys())[:10]
+                    ratio_values = [ratio_data[name]['value'] for name in ratio_names]
+                    
+                    graphs.append({
+                        'type': 'bar',
+                        'title': f'{category} Overview',
+                        'data': {
+                            'x': ratio_names,
+                            'y': [float(v) for v in ratio_values],
+                            'colors': ['#3b82f6'] * len(ratio_names)
+                        }
+                    })
+                    break  # Only show first category to avoid too many graphs
+    
+    # Balance sheet questions
+    if any(word in query_lower for word in ['balance sheet', 'assets', 'liabilities', 'equity']):
+        if balance_sheet:
+            graphs.append({
+                'type': 'bar_grouped',
+                'title': 'Balance Sheet Overview',
+                'data': {
+                    'x': ['Assets', 'Liabilities', 'Equity'],
+                    'y1': [float(balance_sheet['Total Assets']), 0, 0],
+                    'y2': [0, float(balance_sheet['Total Liabilities']), 0],
+                    'y3': [0, 0, float(balance_sheet['Total Equity'])],
+                    'label1': 'Assets',
+                    'label2': 'Liabilities',
+                    'label3': 'Equity'
+                }
+            })
+    
+    return graphs
 
 def get_sample_transactions():
     """Return sample transaction data"""

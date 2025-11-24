@@ -20,6 +20,7 @@ from utils import (
     generate_income_statement_csv,
     get_ai_insights,
     chat_with_ai,
+    generate_relevant_graphs,
     get_sample_transactions
 )
 
@@ -576,9 +577,20 @@ async def chat(chat_message: ChatMessage):
         
         # Call chat with comprehensive context
         response = chat_with_ai(chat_message.message, context)
+        
+        # Generate relevant graphs based on the question
+        graphs = generate_relevant_graphs(
+            chat_message.message, 
+            df, 
+            trial_balance, 
+            balance_sheet, 
+            income_statement, 
+            ratios
+        )
+        
         chat_history_store.append({"role": "user", "content": chat_message.message})
         chat_history_store.append({"role": "assistant", "content": response})
-        return {"success": True, "response": response}
+        return {"success": True, "response": response, "graphs": graphs}
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
